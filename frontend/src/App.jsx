@@ -18,7 +18,8 @@ import {
   FileText, 
   Award,
   Layers,
-  X
+  X,
+  Trash2
 } from 'lucide-react';
 import { 
   fetchHcps, 
@@ -29,7 +30,8 @@ import {
   clearFormState, 
   submitInteraction, 
   sendChatMessage,
-  summarizeVoiceNote
+  summarizeVoiceNote,
+  deleteInteraction
 } from './store/crmSlice';
 
 export default function App() {
@@ -580,6 +582,7 @@ export default function App() {
                       <th>Samples</th>
                       <th>Sentiment</th>
                       <th>Tasks</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -645,6 +648,19 @@ export default function App() {
                                 ))}
                               </div>
                             ) : 'None'}
+                          </td>
+                          <td>
+                            <button 
+                              className="btn btn-secondary" 
+                              style={{ padding: '0.25rem 0.5rem', color: 'var(--accent-red)', borderColor: 'rgba(239, 68, 68, 0.2)', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              onClick={() => {
+                                if (window.confirm("Are you sure you want to delete this interaction log?")) {
+                                  dispatch(deleteInteraction(item.id));
+                                }
+                              }}
+                            >
+                              <Trash2 size={12} /> Delete
+                            </button>
                           </td>
                         </tr>
                       );
