@@ -53,6 +53,20 @@ export const submitInteraction = createAsyncThunk(
   }
 );
 
+export const deleteInteraction = createAsyncThunk(
+  'crm/deleteInteraction',
+  async (id, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/interactions/${id}`);
+      dispatch(fetchInteractions());
+      dispatch(fetchSamples()); // Refresh stock quantity
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.detail || 'Failed to delete interaction');
+    }
+  }
+);
+
 export const sendChatMessage = createAsyncThunk(
   'crm/sendChatMessage',
   async ({ message, currentFormState }, { rejectWithValue }) => {
@@ -209,6 +223,17 @@ const crmSlice = createSlice({
       })
       .addCase(summarizeVoiceNote.rejected, (state, action) => {
         state.voiceLoading = false;
+        state.error = action.payload;
+      })
+      // Delete Interaction cases
+      .addCase(deleteInteraction.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(deleteInteraction.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(deleteInteraction.rejected, (state, action) => {
+        state.loading = false;
         state.error = action.payload;
       });
   }

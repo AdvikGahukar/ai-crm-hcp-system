@@ -89,6 +89,16 @@ def create_interaction(interaction_in: schemas.InteractionCreate, db: Session = 
         if not hcp:
             raise HTTPException(status_code=400, detail="HCP not found")
             
+        # Check for duplicates (same HCP, date, time, and topic)
+        duplicate = db.query(models.Interaction).filter(
+            models.Interaction.hcp_id == interaction_in.hcp_id,
+            models.Interaction.date == interaction_in.date,
+            models.Interaction.time == interaction_in.time,
+            models.Interaction.topics_discussed == interaction_in.topics_discussed
+        ).first()
+        if duplicate:
+            raise HTTPException(status_code=400, detail="This interaction has already been logged.")
+            
         db_interaction = models.Interaction(
             hcp_id=interaction_in.hcp_id,
             type=interaction_in.type,
@@ -189,6 +199,20 @@ def update_interaction(interaction_id: int, updates: dict, db: Session = Depends
             "samples_distributed": [s.id for s in interaction.samples]
         }
     }
+
+@app.delete("/api/interactions/{interaction_id}")
+def delete_interaction(interaction_id: int, db: Session = Depends(get_db)):
+    interaction = db.query(models.Interaction).filter(models.Interaction.id == interaction_id).first()
+    if not interaction:
+        raise HTTPException(status_code=404, detail="Interaction not found")
+        
+    # Revert sample stock deduction
+    for sample in interaction.samples:
+        sample.stock_quantity += 1
+        
+    db.delete(interaction)
+    db.commit()
+    return {"status": "success", "message": f"Interaction {interaction_id} deleted successfully."}
 
 # 4. Chat/AI Agent Endpoints
 @app.post("/api/chat", response_model=schemas.ChatResponse)

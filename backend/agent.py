@@ -86,6 +86,16 @@ def db_log_interaction(
 ) -> dict:
     db = SessionLocal()
     try:
+        # Check for duplicates (same HCP, date, time, and topic)
+        duplicate = db.query(Interaction).filter(
+            Interaction.hcp_id == hcp_id,
+            Interaction.date == date,
+            Interaction.time == time,
+            Interaction.topics_discussed == topics_discussed
+        ).first()
+        if duplicate:
+            return {"status": "error", "message": "This interaction has already been logged."}
+            
         hcp = db.query(HCP).filter(HCP.id == hcp_id).first()
         if not hcp:
             return {"status": "error", "message": f"HCP with ID {hcp_id} not found."}
@@ -427,35 +437,7 @@ class MockAgent:
             if not form_state.get("hcp_id"):
                 response = "I detected you want to log an interaction, but I couldn't identify which HCP. Please specify the doctor's name."
             else:
-                logs.append(f"Tool Executed: log_interaction(hcp_id={form_state['hcp_id']}, type='{form_state['type']}', ...)")
-                
-                # Call database logging
-                # Convert material/sample IDs back to names for db_log_interaction
-                db = SessionLocal()
-                mat_names = [db.query(Material).filter(Material.id == mid).first().name for mid in form_state.get("materials_shared", []) if db.query(Material).filter(Material.id == mid).first()]
-                samp_names = [db.query(Sample).filter(Sample.id == sid).first().name for sid in form_state.get("samples_distributed", []) if db.query(Sample).filter(Sample.id == sid).first()]
-                db.close()
-                
-                res = db_log_interaction(
-                    hcp_id=form_state["hcp_id"],
-                    type=form_state["type"],
-                    date=form_state["date"],
-                    time=form_state["time"],
-                    attendees=form_state.get("attendees") or f"{form_state['hcp_name']}, Sales Rep Alex",
-                    topics_discussed=form_state.get("topics_discussed"),
-                    sentiment=form_state.get("sentiment"),
-                    outcomes=form_state.get("outcomes"),
-                    follow_up_actions=form_state.get("follow_up_actions"),
-                    materials_shared=mat_names,
-                    samples_distributed=samp_names
-                )
-                
-                if res["status"] == "success":
-                    response = f"Successfully logged the interaction (ID: {res['interaction_id']}) with {form_state['hcp_name']}. The details are saved in the database."
-                    # Sync updated state back
-                    form_state = res["form_state"]
-                else:
-                    response = f"Failed to log interaction: {res['message']}"
+                response = "I've filled the form. Please review and click 'Log Interaction' to save."
         
         # 8. Action trigger: "edit" or "update"
         elif "edit interaction" in message_lower or "update interaction" in message_lower or "change details" in message_lower:
@@ -554,7 +536,7 @@ def _run_langgraph_agent_internal(message: str, current_form_state: dict, sessio
                 f"{json.dumps(form_state_tracker, indent=2)}\n\n"
                 "Instructions:\n"
                 "1. If the user mentions a doctor (HCP) by name, always call search_hcp first to get the correct ID.\n"
-                "2. If you want to log the interaction, use log_interaction tool. Provide all details like hcp_id, type, date, time, topics_discussed, sentiment, outcomes, follow_up_actions. If you see materials shared (like brochures, trials) or samples, include them by name.\n"
+                "2. DO NOT call the log_interaction tool. If the user wants to log the interaction, extract all the fields, write them into the form_state JSON block, and respond with a message exactly like: 'I've filled the form. Please review and click 'Log Interaction' to save.'\n"
                 "3. If the user wants to update or edit, use the edit_interaction tool.\n"
                 "4. At the end of your response, you MUST append a JSON code block with the key 'form_state' representing the final state of the form fields to sync. "
                 "Always write the JSON inside ```json ... ``` formatting block so it can be parsed. Ensure ALL keys: hcp_id, hcp_name, type, date, time, attendees, topics_discussed, sentiment, outcomes, follow_up_actions, materials_shared, samples_distributed are present in the JSON."
@@ -700,6 +682,6 @@ def run_langgraph_agent(message: str, current_form_state: dict, session_id: str 
         print(f"Error running live LangGraph agent: {e}. Falling back to MockAgent.")
         mock = MockAgent()
         res = mock.process_message(message, current_form_state)
-        res["response"] = f"[Notice: Groq API Rate Limit or Error encountered (using local simulation)] \n\n{res['response']}"
+        res["response"] = f"{res['response']}\n\n[Notice: Groq API Rate Limit or Error encountered (using local simulation)] "
         return res
 
