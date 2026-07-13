@@ -1,4 +1,4 @@
-# AI-First CRM HCP Module – Log Interaction Screen
+# AI-Powered CRM HCP System
 
 This repository contains a full-stack Customer Relationship Management (CRM) healthcare professional (HCP) module designed specifically for pharmaceutical/medical field representatives. It features a premium, glassmorphism React UI and a Python FastAPI backend powered by an AI agent framework using LangGraph.
 
