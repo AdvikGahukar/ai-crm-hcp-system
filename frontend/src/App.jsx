@@ -244,7 +244,7 @@ export default function App() {
               <FileText size={18} className="text-primary" />
               Log HCP Interaction Details
             </h2>
-            <button className="btn btn-secondary" onClick={handleFormReset} style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+            <button className="btn btn-secondary" onClick={handleFormReset} style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', marginLeft: '27rem'}}>
               <RotateCcw size={14} /> Reset
             </button>
           </div>
