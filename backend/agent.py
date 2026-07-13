@@ -483,7 +483,7 @@ class MockAgent:
                 if history:
                     response += f"Based on history, the last interaction was on {history[0]['date']} regarding '{history[0]['topics_discussed'][:40]}...'. "
                     
-                response += "What topics did you discuss in today's interaction?"
+                # response += "What topics did you discuss in today's interaction?"
             else:
                 response = "Hello! I am your CRM Assistant. You can describe an interaction (e.g. 'Met Dr. Sarah Patel, discussed OncoBoost, positive sentiment') and tell me to 'log this', or search for doctors, study reports, or schedule tasks."
 
